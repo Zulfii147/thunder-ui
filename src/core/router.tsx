@@ -24,15 +24,16 @@ export const coreRoutes = ThunderSDK.getModuleNames()
     const hasCreate = "create" in module
     const hasUpdate = "update" in module
 
-    const children: TRouteObject[] = []
+    const children: TRouteObject[] = [
+      {
+        index: true,
+        display: false,
+        Component: () => <ListPage name={name} />,
+      },
+    ]
 
     if (hasCreate || hasUpdate) {
       children.push(
-        {
-          index: true,
-          display: false,
-          Component: () => <ListPage name={name} />,
-        },
         {
           path: `/${name}/form`,
           display: false,

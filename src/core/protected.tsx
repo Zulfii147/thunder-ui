@@ -3,6 +3,7 @@ import React from "react"
 import { useAuth } from "react-oidc-context"
 import { ThunderSDK } from "thunder-sdk"
 import { LoadingScreen } from "./custom/LoadingScreen"
+import { IconBug, IconLoader, IconLogin } from "@tabler/icons-react"
 
 export function Protected({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = React.useState(false)
@@ -52,6 +53,7 @@ export function Protected({ children }: { children: React.ReactNode }) {
     return (
       <LoadingScreen
         title="Sign in to continue"
+        icon={IconLogin}
         description="Click the following button to sign into your account"
       >
         <Button onClick={handleSignIn}>Sign In</Button>
@@ -63,7 +65,11 @@ export function Protected({ children }: { children: React.ReactNode }) {
     return (
       <LoadingScreen
         title="Something went wrong!"
-        description={auth.error.message}
+        icon={IconBug}
+        description={
+          auth.error?.message ??
+          "An unexpected error has been encountered! Please contact support."
+        }
       >
         <Button variant="outline" onClick={handleSignInAgain}>
           Sign in again?
@@ -76,6 +82,7 @@ export function Protected({ children }: { children: React.ReactNode }) {
     return (
       <LoadingScreen
         title="Getting things ready!"
+        icon={IconLoader}
         description="We are loading your permissions..."
       >
         <Button variant="outline" onClick={handleLogout}>

@@ -61,7 +61,9 @@ export function ListPage({ name }: IListPageProps) {
         </Alert>
       )}
       <div className="">
-        <Button onClick={() => navigate("form")}>Create</Button>
+        {ThunderSDK.isPermitted(ThunderSDK.getModule(name).create) && (
+          <Button onClick={() => navigate("form")}>Create</Button>
+        )}
       </div>
       <div>
         <DataTable
