@@ -3,7 +3,7 @@
 import React from "react"
 import { ThunderSDK } from "thunder-sdk"
 import { Multiselect } from "../custom/Multiselect"
-import { Switch } from "../ui/switch"
+import { Switch } from "@/components/ui/switch"
 import {
   Field,
   FieldDescription,
@@ -11,11 +11,11 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet,
-} from "../ui/field"
-import { Input } from "../ui/input"
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { Dropdown } from "../custom/Dropdown"
-import { Button } from "../ui/button"
-import { Textarea } from "../ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 
 export type TFieldDef = {
   name: string
@@ -26,7 +26,6 @@ export type TFieldDef = {
 }
 
 const fieldsFromModuleMetadata = (metadata: any): TFieldDef[] => {
-  console.log(metadata)
   if (!metadata) return []
 
   if (typeof metadata.crud?.insertSchema !== "object") return []
@@ -74,10 +73,7 @@ export interface IFormPageProps {
 }
 
 export function FormPage({ name }: IFormPageProps) {
-  const metadata = React.useMemo(
-    () => ThunderSDK.getMetadata(name),
-    [name]
-  )
+  const metadata = React.useMemo(() => ThunderSDK.getMetadata(name), [name])
 
   return (
     <form className="mx-auto w-full max-w-md">

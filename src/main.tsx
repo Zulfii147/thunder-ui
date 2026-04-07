@@ -1,22 +1,37 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import { AuthProvider } from "react-oidc-context"
+import { ThunderSDK } from "thunder-sdk"
 
 import "./index.css"
-import App from "./App.tsx"
+
 import { ThemeProvider } from "@/components/theme-provider.tsx"
+import { TooltipProvider } from "@/components/ui/tooltip"
+
+import App from "./App.tsx"
+
+ThunderSDK.init({
+  axiosConfig: {
+    baseURL: import.meta.env.VITE_API_BASE_URL,
+  },
+  cache: {
+    getter: (key: string) => localStorage.getItem(key) || undefined,
+    setter: (key: string, value: string) => {
+      localStorage.setItem(key, value)
+      return true
+    },
+    delete: async (key: string) => {
+      localStorage.removeItem(key)
+      return true
+    },
+  },
+})
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>
-      <AuthProvider
-        authority={import.meta.env.VITE_API_BASE_URL}
-        client_id={import.meta.env.VITE_OAUTH_CLIENT_ID}
-        redirect_uri={window.location.origin}
-        scope="full_access offline_access"
-      >
+      <TooltipProvider>
         <App />
-      </AuthProvider>
+      </TooltipProvider>
     </ThemeProvider>
   </StrictMode>
 )

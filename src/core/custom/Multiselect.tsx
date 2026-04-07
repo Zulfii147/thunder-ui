@@ -10,7 +10,7 @@ import {
   ComboboxList,
   ComboboxValue,
   useComboboxAnchor,
-} from "../ui/combobox"
+} from "@/components/ui/combobox"
 
 export interface IMultiselectProps {
   items: string[]

@@ -6,16 +6,8 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar"
 import { NavMenu } from "./NavMenu"
-import { useLayout } from "@/components/layouts/layout-provider"
-import type { TablerIcon } from "@tabler/icons-react"
-import type { RouteObject } from "react-router"
-
-export type TRouteObject = {
-  name?: string
-  icon?: TablerIcon
-  display?: boolean | (() => boolean)
-  children?: TRouteObject[]
-} & RouteObject
+import { useLayout } from "@/core/layouts/layout-provider"
+import type { TRouteObject } from "@/core/router"
 
 const allowDisplay = (display: boolean | (() => boolean)) => {
   if (typeof display === "function") {
