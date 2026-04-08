@@ -7,6 +7,7 @@ import { IconBug, IconLoader, IconLogin } from "@tabler/icons-react"
 
 export function Protected({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = React.useState(false)
+  const [error, setError] = React.useState<Error | null>(null)
   const auth = useAuth()
 
   React.useEffect(() => {
@@ -18,9 +19,14 @@ export function Protected({ children }: { children: React.ReactNode }) {
         }
       )
 
-      ThunderSDK.plugins.essentials.registerPermissions().then(() => {
-        setReady(true)
-      })
+      ThunderSDK.plugins.essentials
+        .registerPermissions()
+        .then(() => {
+          setReady(true)
+        })
+        .catch((error) => {
+          setError(error)
+        })
     }
 
     return () => {
@@ -30,7 +36,8 @@ export function Protected({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.isAuthenticated])
 
-  const requireSignIn = !auth.isAuthenticated && !auth.isLoading && !auth.error
+  const systemError = auth.error ?? error
+  const requireSignIn = !auth.isAuthenticated && !auth.isLoading && !systemError
   const loadingPermissions = !requireSignIn && !ready
 
   const handleSignIn = () => {
@@ -49,6 +56,10 @@ export function Protected({ children }: { children: React.ReactNode }) {
     handleSignIn()
   }
 
+  const handleRefresh = () => {
+    window.location.reload()
+  }
+
   if (requireSignIn) {
     return (
       <LoadingScreen
@@ -61,19 +72,20 @@ export function Protected({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (auth.error) {
+  if (systemError) {
     return (
       <LoadingScreen
         title="Something went wrong!"
         icon={IconBug}
         description={
-          auth.error?.message ??
+          systemError?.message ??
           "An unexpected error has been encountered! Please contact support."
         }
       >
         <Button variant="outline" onClick={handleSignInAgain}>
           Sign in again?
         </Button>
+        <Button onClick={handleRefresh}>Retry</Button>
       </LoadingScreen>
     )
   }

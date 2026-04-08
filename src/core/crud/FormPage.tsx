@@ -2,8 +2,7 @@
 
 import React from "react"
 import { ThunderSDK } from "thunder-sdk"
-import { Multiselect } from "../custom/Multiselect"
-import { Switch } from "@/components/ui/switch"
+import { toFields, type TField } from "../lib/jsonSchemaToFields"
 import {
   Field,
   FieldDescription,
@@ -12,57 +11,56 @@ import {
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field"
+import { Button } from "@/components/ui/button"
+
+// import { Multiselect } from "../custom/Multiselect"
+import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Dropdown } from "../custom/Dropdown"
-import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 
-export type TFieldDef = {
-  name: string
-  type: string
-  format?: string
-  enum?: string[]
-  maxLength?: number
-}
-
-const fieldsFromModuleMetadata = (metadata: any): TFieldDef[] => {
+const fieldsFromModuleMetadata = (metadata: any) => {
   if (!metadata) return []
 
   if (typeof metadata.crud?.insertSchema !== "object") return []
 
   // Convert json schema to fields data
-  return Object.entries<{
-    type: string
-    format?: string
-  }>(metadata.crud.insertSchema.properties).map(([key]) => ({
-    name: key,
-    type: metadata.crud.insertSchema.properties[key].type,
-    format: metadata.crud.insertSchema.properties[key].format,
-    enum: metadata.crud.insertSchema.properties[key].enum,
-    maxLength: metadata.crud.insertSchema.properties[key].maxLength,
-  }))
+  const results = toFields("data", metadata.crud.insertSchema)
+
+  console.log(results)
+
+  return results
 }
 
-const renderField = (field: TFieldDef) => {
+const renderField = (id: string, field: TField) => {
   switch (field.type) {
-    case "number":
-      return <Input type="number" placeholder={field.name} />
-    case "array":
-      return <Multiselect items={[]} defaultValue={[]} />
     case "boolean":
-      return <Switch />
+      return <Switch id={id} name={field.name} required={field.required} />
     default:
       return field.enum?.length ? (
         <Dropdown
+          id={id}
+          name={field.name}
           items={field.enum.map((value) => ({ value, label: value }))}
+          required={field.required}
         />
-      ) : !field.maxLength || field.maxLength > 100 ? (
-        <Textarea placeholder={field.name} maxLength={field.maxLength} />
-      ) : (
-        <Input
-          type="text"
+      ) : field.type === "string" &&
+        (!field.maxLength || field.maxLength > 100) ? (
+        <Textarea
+          id={id}
+          name={field.name}
           placeholder={field.name}
           maxLength={field.maxLength}
+          required={field.required}
+        />
+      ) : (
+        <Input
+          id={id}
+          name={field.name}
+          type={field.type}
+          placeholder={field.name}
+          maxLength={field.maxLength}
+          required={field.required}
         />
       )
   }
@@ -85,14 +83,19 @@ export function FormPage({ name }: IFormPageProps) {
             required
           </FieldDescription>
           <FieldGroup></FieldGroup>
-          {fieldsFromModuleMetadata(metadata).map((field) => (
-            <Field key={field.name}>
-              <FieldLabel htmlFor="checkout-7j9-card-name-43j">
-                {field.name}
-              </FieldLabel>
-              {renderField(field)}
-            </Field>
-          ))}
+          {fieldsFromModuleMetadata(metadata).map((field) => {
+            const id = crypto.randomUUID()
+
+            return (
+              <Field key={field.name}>
+                <FieldLabel htmlFor={id} className="capitalize">
+                  {field.name}
+                </FieldLabel>
+                {renderField(id, field)}
+                <FieldDescription>{field.description}</FieldDescription>
+              </Field>
+            )
+          })}
         </FieldSet>
 
         <Button type="submit">Submit</Button>

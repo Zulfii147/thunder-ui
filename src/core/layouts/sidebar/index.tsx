@@ -50,8 +50,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter />
       </Sidebar>
-      <main className="w-full overflow-x-hidden">
-        <SidebarTrigger />
+      <main className="relative w-full overflow-x-hidden px-2 py-15">
+        <div className="fixed top-0 w-full py-2 shadow bg-background">
+          <SidebarTrigger className="border-foreground" />
+        </div>
         {children}
       </main>
     </SidebarProvider>
