@@ -34,7 +34,7 @@ export const FieldTypes = [
     "date",
     "email",
     "url",
-    "hidden"
+    "hidden",
 ] as const;
 
 export type TFieldType = typeof FieldTypes[number];
@@ -49,95 +49,129 @@ export type TField = {
     minLength?: number;
     maxLength?: number;
     required?: boolean;
-    enum?: string[];
+    enum?: string[] | Array<{ label: string; value: unknown }>;
     pattern?: string;
     example?: string;
+    ref?: string;
 };
 
-const resolveFieldType = (type: string, format?: string): TFieldType => {
-    switch (format) {
-        case "uri": {
-            return "url";
-        }
+export class JSONSchemaToFields {
+    protected static resolveFieldType(
+        type: string,
+        format?: string,
+    ): TFieldType {
+        switch (format) {
+            case "uri": {
+                return "url";
+            }
 
-        case "date-time": {
-            return "date";
-        }
+            case "date-time": {
+                return "date";
+            }
 
-        case "email": {
-            return "email";
-        }
+            case "email": {
+                return "email";
+            }
 
-        default: {
-            return FieldTypes.includes(type as TFieldType)
-                ? type as TFieldType
-                : "text";
+            default: {
+                return FieldTypes.includes(type as TFieldType)
+                    ? type as TFieldType
+                    : "text";
+            }
         }
     }
-};
 
-export const $jsonFieldSchema = z.object({
-    type: z.string().default("string"),
-    default: z.unknown().optional(),
-    label: z.string().optional(),
-    minLength: z.number().optional(),
-    maxLength: z.number().optional(),
-    enum: z.array(z.string()).optional(),
-    pattern: z.string().optional(),
-    placeholder: z.string().optional(),
-    description: z.string().optional(),
-    example: z.string().optional(),
-});
+    protected static jsonFieldSchema = z.object({
+        type: z.string().default("string"),
+        default: z.unknown().optional(),
+        label: z.string().optional(),
+        minLength: z.number().optional(),
+        maxLength: z.number().optional(),
+        enum: z.array(z.string()).optional(),
+        pattern: z.string().optional(),
+        placeholder: z.string().optional(),
+        description: z.string().optional(),
+        example: z.string().optional(),
+        ref: z.string().optional(),
+    });
 
-export const toFields = (
-    name: string,
-    schema: unknown,
-    hints?: Partial<TField>,
-): TField[] => {
-    if (typeof schema !== "object" || schema === null) return [];
+    protected static _toFields(
+        name: string,
+        schema: unknown,
+        hints?: Partial<TField>,
+    ): TField[] {
+        if (typeof schema !== "object" || schema === null) return [];
 
-    const type = "type" in schema && typeof schema.type === "string"
-        ? schema.type
-        : "string";
+        const type = "type" in schema && typeof schema.type === "string"
+            ? schema.type
+            : "string";
 
-    if (
-        type === "object" && "properties" in schema &&
-        typeof schema.properties === "object" && schema.properties !== null
-    ) {
-        return Object.entries(schema.properties).flatMap(([prop, def]) =>
-            toFields(prop, def, {
-                ...("required" in schema &&
-                        schema.required instanceof Array
-                    ? { required: schema.required.includes(prop) }
-                    : {}),
-            })
+        if (
+            type === "object" && "properties" in schema &&
+            typeof schema.properties === "object" && schema.properties !== null
+        ) {
+            return Object.entries(schema.properties).flatMap(([prop, def]) =>
+                this._toFields(prop, def, {
+                    ...("required" in schema &&
+                            schema.required instanceof Array
+                        ? { required: schema.required.includes(prop) }
+                        : {}),
+                })
+            );
+        }
+
+        if (
+            type === "array" && "items" in schema &&
+            typeof schema.items === "object" && schema.items !== null
+        ) {
+            return this._toFields(name, schema.items, { multi: true });
+        }
+
+        const { success, data, error } = this.jsonFieldSchema.safeParse(schema);
+
+        if (success) {
+            const field = {
+                ...hints,
+                ...data,
+                type: this.resolveFieldType(
+                    type,
+                    "format" in schema && typeof schema.format === "string"
+                        ? schema.format
+                        : undefined,
+                ),
+                name,
+                multi: hints?.multi ?? !!data.ref,
+            };
+
+            return [field];
+        } else console.error(error);
+
+        return [];
+    }
+
+    static resolveRef?: (
+        ref: string,
+    ) => Promise<Array<{ label: string; value: unknown }>>;
+
+    protected static async resolveField(field: TField): Promise<TField> {
+        if (typeof field.ref === "string") {
+            if (typeof this.resolveRef !== "function") {
+                throw new Error(
+                    "Unable to resolve reference! No implementation!",
+                );
+            }
+
+            field.enum = await this.resolveRef(field.ref);
+        }
+
+        return field;
+    }
+
+    static async toFields(name: string, schema: unknown): Promise<TField[]> {
+        const fields = this._toFields(name, schema);
+
+        return await Promise.all(
+            fields.map((field) => this.resolveField(field)),
         );
     }
-
-    if (
-        type === "array" && "items" in schema &&
-        typeof schema.items === "object" && schema.items !== null
-    ) {
-        return toFields(name, schema.items, { multi: true });
-    }
-
-    const { success, data, error } = $jsonFieldSchema.safeParse(schema);
-
-    if (success) {
-        const field = {
-            ...hints,
-            ...data,
-            type: resolveFieldType(
-                type,
-                "format" in schema && typeof schema.format === "string"
-                    ? schema.format
-                    : undefined,
-            ),
-            name,
-        };
-
-        return [field];
-    } else console.error(error);
-
-    return [];
-};
+}

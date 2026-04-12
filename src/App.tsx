@@ -44,7 +44,7 @@ export function App() {
   return (
     <LoadingProvider>
       <AuthProvider
-        authority={import.meta.env.VITE_API_BASE_URL}
+        authority={import.meta.env.VITE_OAUTH_SERVER_URL}
         client_id={import.meta.env.VITE_OAUTH_CLIENT_ID}
         redirect_uri={currentUri + window.location.search}
         scope={import.meta.env.VITE_OAUTH_SCOPE}

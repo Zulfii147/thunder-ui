@@ -26,15 +26,18 @@ import { Dropdown } from "../custom/Dropdown"
 import { Multiselect } from "../custom/Multiselect"
 import { Tag, TagInput, TagInputBadges } from "../custom/TagInput"
 
-import { toFields, type TField } from "../lib/jsonSchemaToFields"
+import { JSONSchemaToFields, type TField } from "../lib/jsonSchemaToFields"
 
-const fieldsFromModuleMetadata = (metadata: any) => {
+const fieldsFromModuleMetadata = async (metadata: any) => {
   if (!metadata) return []
 
   if (typeof metadata.crud?.insertSchema !== "object") return []
 
   // Convert json schema to fields data
-  const results = toFields("data", metadata.crud.insertSchema)
+  const results = await JSONSchemaToFields.toFields(
+    "data",
+    metadata.crud.insertSchema
+  )
 
   console.log(results)
 
@@ -87,7 +90,11 @@ const renderField = (
         render={(def) => (
           <Dropdown
             id={id}
-            items={(field.enum ?? []).map((value) => ({ value, label: value }))}
+            items={(field.enum ?? []).map((value) =>
+              typeof value === "object" && value
+                ? value
+                : { value, label: value }
+            )}
             value={def.field.value ?? ""}
             onValueChange={def.field.onChange}
           />
@@ -168,6 +175,13 @@ export function FormPage({ name }: IFormPageProps) {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<any>()
+  const [fields, setFields] = React.useState<TField[]>([])
+
+  React.useEffect(() => {
+    ;(async () => {
+      setFields(await fieldsFromModuleMetadata(metadata))
+    })()
+  }, [metadata])
 
   const onSubmit: SubmitHandler<any> = async (body) => {
     await ThunderSDK.getModule(name).create({
@@ -185,7 +199,7 @@ export function FormPage({ name }: IFormPageProps) {
             required
           </FieldDescription>
           {/* <FieldGroup></FieldGroup> */}
-          {fieldsFromModuleMetadata(metadata).map((field) => {
+          {fields.map((field) => {
             const id = crypto.randomUUID()
 
             if (!field.required && field.type === "hidden") return
