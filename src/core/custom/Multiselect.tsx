@@ -12,16 +12,11 @@ import {
   useComboboxAnchor,
 } from "@/components/ui/combobox"
 
-export interface IMultiselectProps {
-  items: string[]
-  defaultValue?: string[]
-}
-
-export function Multiselect({ items, defaultValue }: IMultiselectProps) {
+export const Multiselect: typeof Combobox = (props) => {
   const anchor = useComboboxAnchor()
 
   return (
-    <Combobox multiple autoHighlight items={items} defaultValue={defaultValue}>
+    <Combobox {...props}>
       <ComboboxChips ref={anchor} className="w-full">
         <ComboboxValue>
           {(values) => (

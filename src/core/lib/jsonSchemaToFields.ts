@@ -28,12 +28,13 @@
 import z from "zod";
 
 export const FieldTypes = [
-    "string",
+    "text",
     "number",
     "boolean",
     "date",
     "email",
     "url",
+    "hidden"
 ] as const;
 
 export type TFieldType = typeof FieldTypes[number];
@@ -50,6 +51,7 @@ export type TField = {
     required?: boolean;
     enum?: string[];
     pattern?: string;
+    example?: string;
 };
 
 const resolveFieldType = (type: string, format?: string): TFieldType => {
@@ -69,7 +71,7 @@ const resolveFieldType = (type: string, format?: string): TFieldType => {
         default: {
             return FieldTypes.includes(type as TFieldType)
                 ? type as TFieldType
-                : "string";
+                : "text";
         }
     }
 };
@@ -84,6 +86,7 @@ export const $jsonFieldSchema = z.object({
     pattern: z.string().optional(),
     placeholder: z.string().optional(),
     description: z.string().optional(),
+    example: z.string().optional(),
 });
 
 export const toFields = (
