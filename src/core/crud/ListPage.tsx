@@ -3,6 +3,7 @@ import React from "react"
 import { hash } from "ohash"
 import { ThunderSDK } from "thunder-sdk"
 import { DataTable } from "../custom/Datatable"
+import { cards } from "@/templates/crudCard"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router"
@@ -50,6 +51,8 @@ export function ListPage({ name }: IListPageProps) {
   )
 
   const { data, error } = use(get())
+  const [isCardView, setIsCardView] = React.useState(false)
+  const hasCardSupport = data?.results?.some((item: any) => item?.card === true) ?? false
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-5">
@@ -60,16 +63,32 @@ export function ListPage({ name }: IListPageProps) {
           <AlertDescription>{error.message}</AlertDescription>
         </Alert>
       )}
-      <div className="">
-        {ThunderSDK.isPermitted(ThunderSDK.getModule(name).create) && (
-          <Button onClick={() => navigate("form")}>Create</Button>
-        )}
+      <div className="flex justify-between items-center">
+        <div>
+          {ThunderSDK.isPermitted(ThunderSDK.getModule(name).create) && (
+            <Button onClick={() => navigate("form")}>Create</Button>
+          )}
+        </div>
+        <div>
+          {hasCardSupport && (
+            <Button variant="outline" onClick={() => setIsCardView(!isCardView)}>
+              {isCardView ? "View Table" : "View Card"}
+            </Button>
+          )}
+        </div>
       </div>
       <div>
-        <DataTable
-          columns={columnsFromModuleMetadata(metadata)}
-          data={data?.results ?? []}
-        />
+        {isCardView ? (
+          <cards.Grid
+            columns={columnsFromModuleMetadata(metadata)}
+            data={data?.results ?? []}
+          />
+        ) : (
+          <DataTable
+            columns={columnsFromModuleMetadata(metadata)}
+            data={data?.results ?? []}
+          />
+        )}
       </div>
     </div>
   )

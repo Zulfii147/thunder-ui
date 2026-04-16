@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider, Outlet } from "react-router"
 import { AuthProvider } from "react-oidc-context"
 
 /** You can change the following layout from "sidebar" to some other layout */
-import { Layout } from "@/core/layouts/sidebar"
+import { Layout } from "@/core/layouts/navbar"
 import { LayoutProvider } from "@/core/layouts/layout-provider"
 
 /** Create a router with the core routes as the child routes of the root path */
@@ -13,8 +13,9 @@ import { LoadingProvider } from "./core/context/LoaderProvider"
 const router = createBrowserRouter(
   [
     {
-      name: "Main",
+      name: "Root",
       path: "/",
+      handle: { name: "Root" },
       Component: () => (
         <Protected>
           <LayoutProvider layout={Layout} router={router}>
@@ -23,8 +24,31 @@ const router = createBrowserRouter(
         </Protected>
       ),
       children: [
-        ...coreRoutes,
+        {
+          name: "Main",
+          handle: { name: "Main" },
+          Component: () => <Outlet />,
+          children: coreRoutes
+            .filter(route => !["posts", "projects"].includes(route.name || ""))
+            .map(route => ({
+              ...route,
+              path: route.path,
+              handle: { name: route.name }
+            }))
+        },
         // You can add your custom routes here
+        {
+          name: "Huruf Website",
+          handle: { name: "Huruf Website" },
+          Component: () => <Outlet />,
+          children: coreRoutes
+            .filter(route => ["posts", "projects"].includes(route.name || ""))
+            .map(route => ({
+              ...route,
+              path: route.path,
+              handle: { name: route.name }
+            }))
+        }
       ],
     },
 
@@ -36,17 +60,14 @@ const router = createBrowserRouter(
 )
 
 export function App() {
-  const currentUri = new URL(
-    import.meta.env.BASE_URL,
-    window.location.origin
-  ).toString()
+  const currentUri = window.location.origin
 
   return (
     <LoadingProvider>
       <AuthProvider
         authority={import.meta.env.VITE_OAUTH_SERVER_URL}
         client_id={import.meta.env.VITE_OAUTH_CLIENT_ID}
-        redirect_uri={currentUri + window.location.search}
+        redirect_uri={currentUri}
         scope={import.meta.env.VITE_OAUTH_SCOPE}
         post_logout_redirect_uri={currentUri}
         onSigninCallback={() => {
